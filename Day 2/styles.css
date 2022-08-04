@@ -283,3 +283,7 @@ button.in-cart {
 .line-item.total .price {
   color: #6B00F5;
 }
+
+.hidden {
+  display: none;
+}

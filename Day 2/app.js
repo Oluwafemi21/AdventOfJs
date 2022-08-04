@@ -14,7 +14,7 @@ const menuItems = [
     count: 0
   },
   {
-    name: 'Spaghetti Meat Sauce',
+    name: 'Spaghetti with Meat Sauce',
     price: 782,
     image: 'plate__spaghetti-meat-sauce.png',
     alt: 'Spaghetti with Meat Sauce',
@@ -43,88 +43,118 @@ const menuItems = [
   }
 ]
 
-let template = `  <!-- item 1 -->
-<li>
-  <div class="plate">
-    <img src="images/plate__fish-sticks-fries.png" alt="Fish Sticks and Fries" class="plate" />
-    <div class="quantity">1</div>
-  </div>
-  <div class="content">
-    <p class="menu-item">Fish Sticks and Fries</p>
-    <p class="price">$6.34</p>
-  </div>
-  <div class="quantity__wrapper">
-    <button class="decrease">
-      <img src="images/chevron.svg" />
-    </button>
-    <div class="quantity">1</div>
-    <button class="increase">
-      <img src="images/chevron.svg" />
-    </button>
-  </div>
-  <div class="subtotal">
-    $6.34
-  </div>
-</li>
-
-<!-- item 2 -->
-<li>
-  <div class="plate">
-    <img src="images/plate__french-fries.png" alt="French Fries" class="plate" />
-    <div class="quantity">2</div>
-  </div>
-  <div class="content">
-    <p class="menu-item">French Fries with Ketchup</p>
-    <p class="price">$2.23</p>
-  </div>
-  <div class="quantity__wrapper">
-    <button class="decrease">
-      <img src="images/chevron.svg" />
-    </button>
-    <div class="quantity">2</div>
-    <button class="increase">
-      <img src="images/chevron.svg" />
-    </button>
-  </div>
-  <div class="subtotal">
-    $4.46
-  </div>
-</li>
-</ul>
-
-<div class="totals">
-<div class="line-item">
-  <div class="label">Subtotal:</div>
-  <div class="amount price subtotal">$10.80</div>
-</div>
-<div class="line-item">
-  <div class="label">Tax:</div>
-  <div class="amount price tax">$1.05</div>
-</div>
-<div class="line-item total">
-  <div class="label">Total:</div>
-  <div class="amount price total">$11.85</div>
-</div>
-</div>`
-
-
 //initialize all the elements
-const buttons = document.querySelectorAll('add');
+const cartSummary = document.querySelector('.cart-summary');
+const listItem = document.querySelectorAll('.panel .menu li');
+const emptyMessage = document.querySelector('.empty');
+const totals = document.querySelector('.totals');
 
 
 //Initialize db
 let db = null;
+let cart;
 
 
-//On DOMCOntentLoaded Open DB,Check if the store is empty
-document.addEventListener('DOMContentLoaded', () => {
-  createDB();
-  createDB();
-  setTimeout(() => {
-    viewDb();
-  }, 40)
+//check if item is in localstorage
+function setLocalStorage() {
+  if (localStorage.getItem("cart") === null) {
+    cart = [];
+  } else {
+    cart = JSON.parse(localStorage.getItem("cart"))
+  };
+}
+
+
+
+// Function Calls
+listItem.forEach(list => {
+  list.addEventListener('click', (e) => {
+    if (e.target.classList.contains('add')) {
+      let itemName = list.lastElementChild.firstElementChild.textContent;
+      addToCart(itemName)
+    }
+  })
 })
+//On DOMCOntentLoaded Open DB,Check if the store is empty
+document.addEventListener('DOMContentLoaded', getCart);
 
+
+//Using LocalStorage
+function getCart() {
+  let template;
+  setLocalStorage();
+  cart.forEach(item => {
+
+    template = `<li>
+      <div class="plate">
+        <img src="images/${item.image}" alt="${item.alt}" class="plate" />
+        <div class="quantity">${item.count}</div>
+      </div>
+      <div class="content">
+        <p class="menu-item">${item.name}</p>
+        <p class="price">$${item.price / 100}</p>
+      </div>
+      <div class="quantity__wrapper">
+        <button class="decrease">
+          <img src="images/chevron.svg" />
+        </button>
+        <div class="quantity">${item.count}</div>
+        <button class="increase">
+          <img src="images/chevron.svg" />
+        </button>
+      </div>
+      <div class="subtotal">
+        $${item.price / 100 * item.count}
+      </div>
+    </li>`;
+
+    cartSummary.innerHTML += template;
+
+  })
+
+}
+
+function addToCart(id) {
+  let item = menuItems.find((menuItem) => {
+    menuItem.count += 1;
+    return menuItem.name === id;
+  });
+
+
+  //Save item to cart
+  saveCart(item);
+  let addedItem = `<li>
+  <div class="plate">
+    <img src="images/${item.image}" alt="${item.alt}" class="plate" />
+    <div class="quantity">${item.count}</div>
+  </div>
+  <div class="content">
+    <p class="menu-item">${item.name}</p>
+    <p class="price">$${item.price / 100}</p>
+  </div>
+  <div class="quantity__wrapper">
+    <button class="decrease">
+      <img src="images/chevron.svg" />
+    </button>
+    <div class="quantity">${item.count}</div>
+    <button class="increase">
+      <img src="images/chevron.svg" />
+    </button>
+  </div>
+  <div class="subtotal">
+    $${item.price / 100 * item.count}
+  </div>
+</li>`;
+  cartSummary.append(addedItem)
+}
+
+function saveCart(item) {
+  setLocalStorage();
+  cart = [...cart, item]
+  localStorage.setItem('cart', JSON.stringify(cart));
+}
+
+//Using IndexedDB
 //function to create a db
 function createDB() {
   //create a db for the cart
@@ -147,7 +177,6 @@ function createDB() {
   }
 }
 
-
 //function to view items in the db
 function viewDb() {
   const tx = db.transaction('cart', 'readonly')
@@ -162,20 +191,21 @@ function viewDb() {
       console.log('Something dey here boss')
       cursor.continue();
     } else {
-      console.log('Wetin you dey keep for here wey you dey find?')
+      console.log(cursor)
     }
   }
 }
 
 //function to add an item to the db
-function addToCart() {
+function addToCartDb() {
   const item = {
-    name: 'Fish Sticks and Fries',
-    price: 634,
-    image: 'plate__fish-sticks-fries.png',
-    alt: 'Fish Sticks and Fries',
+    name: 'French Fries with Ketchup',
+    price: 223,
+    image: 'plate__french-fries.png',
+    alt: 'French Fries',
     count: 0
   }
+
   const tx = db.transaction('cart', 'readwrite')
   tx.onerror = e => { alert(`Error! ${e.target.error}`) }
 
@@ -184,7 +214,4 @@ function addToCart() {
   console.log('Item has been added to cart!!')
 }
 
-setTimeout(() => {
-  addToCart();
-  alert('Bad boy push this thing')
-}, 2000)
+
