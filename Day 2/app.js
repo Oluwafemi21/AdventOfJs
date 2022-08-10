@@ -4,55 +4,73 @@ const menuItems = [
     price: 223,
     image: 'plate__french-fries.png',
     alt: 'French Fries',
-    count: 0
+    count: 1
   },
   {
     name: 'Salmon and Vegetables',
     price: 512,
     image: 'plate__salmon-vegetables.png',
     alt: 'Salmon and Vegetables',
-    count: 0
+    count: 1
   },
   {
     name: 'Spaghetti with Meat Sauce',
     price: 782,
     image: 'plate__spaghetti-meat-sauce.png',
     alt: 'Spaghetti with Meat Sauce',
-    count: 0
+    count: 1
   },
   {
     name: 'Bacon, Eggs, and Toast',
     price: 599,
     image: 'plate__bacon-eggs.png',
     alt: 'Bacon, Eggs, and Toast',
-    count: 0
+    count: 1
   },
   {
     name: 'Chicken Salad with Parmesan',
     price: 698,
     image: 'plate__chicken-salad.png',
     alt: 'Chicken Salad with Parmesan',
-    count: 0
+    count: 1
   },
   {
     name: 'Fish Sticks and Fries',
     price: 634,
     image: 'plate__fish-sticks-fries.png',
     alt: 'Fish Sticks and Fries',
-    count: 0
+    count: 1
   }
 ]
 
-//initialize all the elements
+
+//Steps
+//Get the button to be disabled on click and show in cart
+// Check local storage if item does not exist, add the item
+// Get Items from local storage on dom load
+// If count < 0 remove item and change the button to add to cart
+// Update the quantity 
+// Get total
+// clear cart button
+
+
+
+
+//Query all the elements
 const cartSummary = document.querySelector('.cart-summary');
 const listItem = document.querySelectorAll('.panel .menu li');
 const emptyMessage = document.querySelector('.empty');
-const totals = document.querySelector('.totals');
+const total = document.querySelector('.total');
+const subTotal = document.querySelector('.subtotal');
+const taxTotal = document.querySelector('.tax');
+const content = document.querySelectorAll('.content');
 
 
 //Initialize db
 let db = null;
-let cart;
+let cart = [];
+let buttonsDOM = [];
+let contents = [...content]
 
 
 //check if item is in localstorage
@@ -69,12 +87,22 @@ function setLocalStorage() {
 // Function Calls
 listItem.forEach(list => {
   list.addEventListener('click', (e) => {
-    if (e.target.classList.contains('add')) {
-      let itemName = list.lastElementChild.firstElementChild.textContent;
+    let btn = e.target;
+    let content = list.lastElementChild;
+    if (btn.classList.contains('add')) { //already checks for the button click
+      let itemName = content.firstElementChild.textContent;
       addToCart(itemName)
+      btn.parentElement.removeChild(btn.parentElement.lastElementChild);
+      let inCartBtn = `<button class="in-cart">
+        <img src="images/check.svg" alt="Check" />
+        In Cart
+      </button>`;
+      content.innerHTML += inCartBtn;
+      content.lastElementChild.disabled = true;
     }
   })
-})
+});
+
 //On DOMCOntentLoaded Open DB,Check if the store is empty
 document.addEventListener('DOMContentLoaded', getCart);
 
@@ -110,16 +138,34 @@ function getCart() {
 
     cartSummary.innerHTML += template;
 
-  })
+  });
 
+  //Check for the button
+  const btns = [...document.querySelectorAll('.add')];
+  btns.forEach(btn => {
+    let id = btn.parentElement.children[0].textContent;
+    //check if id is in the cart
+    let inCart = cart.find(item => item.name === id);
+    if (inCart) {
+      let inCartBtn = `<button class="in-cart">
+        <img src="images/check.svg" alt="Check" />
+        In Cart
+      </button>`;
+      btn.disabled = true
+      btn.parentElement.removeChild(btn.parentElement.lastElementChild);
+      contents.forEach(content => {
+        if (content.firstElementChild.textContent === id) {
+          content.innerHTML += inCartBtn
+        }
+      })
+    }
+  })
 }
 
 function addToCart(id) {
   let item = menuItems.find((menuItem) => {
-    menuItem.count += 1;
     return menuItem.name === id;
   });
-
 
   //Save item to cart
   saveCart(item);
@@ -145,7 +191,11 @@ function addToCart(id) {
     $${item.price / 100 * item.count}
   </div>
 </li>`;
-  cartSummary.append(addedItem)
+  cartSummary.innerHTML += addedItem
+
+
+  //if the item does not exist, add it
+  //if the item exists do not add it
 }
 
 function saveCart(item) {

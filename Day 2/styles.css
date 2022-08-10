@@ -14,6 +14,7 @@ body {
 .wrapper {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   width: 100vw;
   gap: 50px;
@@ -282,8 +283,4 @@ button.in-cart {
 
 .line-item.total .price {
   color: #6B00F5;
-}
-
-.hidden {
-  display: none;
 }
