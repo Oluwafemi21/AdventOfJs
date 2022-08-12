@@ -190,6 +190,11 @@ button.in-cart {
   z-index: 1;
 }
 
+.decrease img,
+.increase img {
+  pointer-events: none;
+}
+
 .cart-summary .content {
   grid-area: content;
 }
@@ -283,4 +288,8 @@ button.in-cart {
 
 .line-item.total .price {
   color: #6B00F5;
+}
+
+.hidden {
+  display: none;
 }

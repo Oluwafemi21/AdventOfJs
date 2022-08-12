@@ -60,7 +60,7 @@ const menuItems = [
 const cartSummary = document.querySelector('.cart-summary');
 const listItem = document.querySelectorAll('.panel .menu li');
 const emptyMessage = document.querySelector('.empty');
-const total = document.querySelector('.total');
+const total = document.querySelector('#total');
 const subTotal = document.querySelector('.subtotal');
 const taxTotal = document.querySelector('.tax');
 const content = document.querySelectorAll('.content');
@@ -69,8 +69,10 @@ const content = document.querySelectorAll('.content');
 //Initialize db
 let db = null;
 let cart = [];
-let buttonsDOM = [];
-let contents = [...content]
+let contents = [...content];
+let buttonsDOM = [...cartSummary.children]
+let cartTotal = 0;
+let tax = 0.0975;
 
 
 //check if item is in localstorage
@@ -83,15 +85,26 @@ function setLocalStorage() {
 }
 
 
-
 // Function Calls
+
+//On DOMCOntentLoaded Open DB,Check if the store is empty
+document.addEventListener('DOMContentLoaded', getCart);
+
+//Add Item to Cart
 listItem.forEach(list => {
   list.addEventListener('click', (e) => {
     let btn = e.target;
     let content = list.lastElementChild;
     if (btn.classList.contains('add')) { //already checks for the button click
+      emptyMessage.classList.add('hidden')
       let itemName = content.firstElementChild.textContent;
-      addToCart(itemName)
+      let item = menuItems.find((menuItem) => {
+        return menuItem.name === itemName;
+      });
+      addToCart(item);
+      cart = [...cart, item]
+      setTotal();
+      saveCart(cart);
       btn.parentElement.removeChild(btn.parentElement.lastElementChild);
       let inCartBtn = `<button class="in-cart">
         <img src="images/check.svg" alt="Check" />
@@ -99,21 +112,21 @@ listItem.forEach(list => {
       </button>`;
       content.innerHTML += inCartBtn;
       content.lastElementChild.disabled = true;
+
     }
   })
 });
 
-//On DOMCOntentLoaded Open DB,Check if the store is empty
-document.addEventListener('DOMContentLoaded', getCart);
 
-
-//Using LocalStorage
+//Display the items from the cart
 function getCart() {
-  let template;
-  setLocalStorage();
-  cart.forEach(item => {
+  if (cart) {
+    emptyMessage.classList.add('hidden')
+    let template;
+    setLocalStorage();
+    cart.forEach(item => {
 
-    template = `<li>
+      template = `<li>
       <div class="plate">
         <img src="images/${item.image}" alt="${item.alt}" class="plate" />
         <div class="quantity">${item.count}</div>
@@ -132,43 +145,44 @@ function getCart() {
         </button>
       </div>
       <div class="subtotal">
-        $${item.price / 100 * item.count}
+        $${(item.price / 100 * item.count).toFixed(2)}
       </div>
     </li>`;
 
-    cartSummary.innerHTML += template;
+      cartSummary.innerHTML += template;
 
-  });
+    });
 
-  //Check for the button
-  const btns = [...document.querySelectorAll('.add')];
-  btns.forEach(btn => {
-    let id = btn.parentElement.children[0].textContent;
-    //check if id is in the cart
-    let inCart = cart.find(item => item.name === id);
-    if (inCart) {
-      let inCartBtn = `<button class="in-cart">
+    //Check for the button
+    const btns = [...document.querySelectorAll('.add')];
+    btns.forEach(btn => {
+      let id = btn.parentElement.children[0].textContent;
+      //check if id is in the cart
+      let inCart = cart.find(item => item.name === id);
+      if (inCart) {
+        let inCartBtn = `<button class="in-cart">
         <img src="images/check.svg" alt="Check" />
         In Cart
       </button>`;
-      btn.disabled = true
-      btn.parentElement.removeChild(btn.parentElement.lastElementChild);
-      contents.forEach(content => {
-        if (content.firstElementChild.textContent === id) {
-          content.innerHTML += inCartBtn
-        }
-      })
-    }
-  })
+        btn.disabled = true
+        btn.parentElement.removeChild(btn.parentElement.lastElementChild);
+        contents.forEach(content => {
+          if (content.firstElementChild.textContent === id) {
+            content.innerHTML += inCartBtn
+          }
+        })
+      }
+    });
+
+    setTotal();
+  } else {
+    emptyMessage.classList.remove('hidden')
+  }
 }
 
-function addToCart(id) {
-  let item = menuItems.find((menuItem) => {
-    return menuItem.name === id;
-  });
+//Add an item to cart
+function addToCart(item) {
 
-  //Save item to cart
-  saveCart(item);
   let addedItem = `<li>
   <div class="plate">
     <img src="images/${item.image}" alt="${item.alt}" class="plate" />
@@ -188,20 +202,102 @@ function addToCart(id) {
     </button>
   </div>
   <div class="subtotal">
-    $${item.price / 100 * item.count}
+    $${(item.price / 100 * item.count).toFixed(2)}
   </div>
 </li>`;
-  cartSummary.innerHTML += addedItem
-
-
-  //if the item does not exist, add it
-  //if the item exists do not add it
+  cartSummary.innerHTML += addedItem;
 }
 
-function saveCart(item) {
+//Cart Logic
+cartSummary.addEventListener('click', (e) => {
+  let cartButton = e.target;
+  let id = cartButton.parentElement.parentElement.children[1].firstElementChild.textContent
+  console.log(id, 'name of the item that wants to be increased / decreased');
+
+
+
+  if (cartButton.classList.contains("increase")) {
+
+    let temp = cart.find((item) => { item.name === id });
+    temp.count += 1;
+
+    setTotal();
+    saveCart(cart);
+    cartButton.previousElementSibling.innerText = temp.count;
+    cartButton.parentElement.parentElement.firstElementChild.lastElementChild.textContent = temp.count;
+  } else if (cartButton.classList.contains("decrease")) {
+    console.log(0)
+    let temp = cart.find(item => item.name === id);
+
+    // temp.count -= 1;
+    if (1) {
+      setTotal();
+      saveCart(cart);
+      cartButton.nextElementSibling.innerText = temp.count;
+      cartButton.parentElement.parentElement.firstElementChild.lastElementChild.textContent = temp.count;
+    } else {
+      removeItem(temp);
+      cartSummary.removeChild(cartButton.parentElement.parentElement);
+    }
+  }
+})
+
+//Save Item added to cart
+function saveCart(cart) {
   setLocalStorage();
-  cart = [...cart, item]
   localStorage.setItem('cart', JSON.stringify(cart));
+}
+
+//Update the totals
+function setTotal() {
+  let totalPrice = 0;
+  cart.map(item => {
+    cartTotal += (item.price / 100) * (item.count)
+  });
+  taxPrice = tax * cartTotal;
+  totalPrice = cartTotal + taxPrice;
+
+
+  subTotal.textContent = `$${(cartTotal).toFixed(2)}`;
+  taxTotal.textContent = `$${(taxPrice).toFixed(2)}`;
+  total.textContent = `$${(totalPrice).toFixed(2)}`
+}
+
+
+//Increase item quantity
+// function increaseQuantity(id, cartButton) {
+//   let temp = cart.find((item) => item.name === id);
+//   console.log(temp.name);
+//   temp.count += 1;
+//   setTotal();
+//   saveCart(cart)
+//   cartButton.previousElementSibling.innerText = temp.count;
+//   cartButton.parentElement.parentElement.firstElementChild.lastElementChild.textContent = temp.count
+// }
+
+// Decrease item quantity
+// function decreaseQuantity(id, cartButton) {
+//   let temp = cart.find(item => item.name === id);
+//   console.log('Item ', temp.name, ' is decreased by one');
+//   temp.count -= 1;
+//   if (temp.count > 0) {
+//     setTotal();
+//     saveCart(cart);
+//     cartButton.nextElementSibling.innerText = temp.count;
+//     cartButton.parentElement.parentElement.firstElementChild.lastElementChild.textContent = temp.count;
+//   } else {
+//     removeItem(temp);
+//     cartSummary.removeChild(cartButton.parentElement.parentElement);
+//   }
+// }
+
+
+//Remove an item
+function removeItem(id) {
+  cart = cart.filter(item => item.name !== id.name);
+  setTotal();
+  saveCart(cart);
+
 }
 
 //Using IndexedDB
