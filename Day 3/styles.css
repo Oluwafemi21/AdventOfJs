@@ -1,5 +1,6 @@
 body {
   background: #37B2C3;
+  overflow: hidden;
 }
 
 .piano {
@@ -11,7 +12,7 @@ body {
 }
 
 .white-keys {
- fill: white;
+  fill: white;
 }
 
 .white-keys:hover {
@@ -23,6 +24,11 @@ body {
 }
 
 .black-keys:hover {
-  fill: #f40082;  
+  fill: #f40082;
 }
 
+.piano svg {
+  height: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
