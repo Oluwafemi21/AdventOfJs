@@ -111,7 +111,7 @@ listItem.forEach((list) => {
 
 //Display the items from the cart
 function getCart() {
-    if (cart.length > 0) {
+    if (cart) {
         emptyMessage.classList.add("hidden");
         let template;
         setLocalStorage();
@@ -196,7 +196,6 @@ function addToCart(item) {
   </div>
 </li>`;
     cartSummary.innerHTML += addedItem;
-    console.log("Item Added to Cart Successfully", item);
 }
 
 //Cart Logic
@@ -205,7 +204,7 @@ cartSummary.addEventListener("click", (e) => {
     let id =
         cartButton.parentElement.parentElement.children[1].firstElementChild
             .textContent;
-    // let subTotal = cartButton.parentElement.nextElementSibling;
+    let subTotal = cartButton.parentElement.nextElementSibling;
     let temp = cart.find((item) => item.name === id);
     if (cartButton.classList.contains("increase")) {
         temp.count += 1;
